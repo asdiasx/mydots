@@ -1,0 +1,142 @@
+set nocompatible              " be iMproved, required
+
+"set exrc       "dangerous, allow one vimrc per directory
+set encoding=utf-8
+set clipboard=unnamedplus   "changes from * to + clipb register, allowing integration with system's clipboard
+set hidden    "handles buffer for editting more than one file
+set noerrorbells
+set tabstop=2 softtabstop=2
+set shiftwidth=2
+set expandtab     "spaces on tab
+set smartindent
+set nu
+"set nowrap
+set smartcase "use case if caps used
+"set noswapfile
+set directory^=$HOME/.vim/tmp// "swapfile location
+set nobackup
+set undodir=~/.vim/undodir
+set undofile
+set incsearch
+
+" Give more space for displaying messages.
+set cmdheight=2
+
+" Having longer updatetime (default is 4000 ms = 4 s) leads to noticeable
+" delays and poor user experience.
+set updatetime=550
+
+" Don't pass messages to |ins-completion-menu|.
+set shortmess+=c  "hide ins-completion-menu messages
+
+"auto install vim-plug
+if empty(glob('~/.vim/autoload/plug.vim'))
+  silent !curl -fLo ~/.vim/autoload/plug.vim --create-dirs
+    \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+endif
+
+
+call plug#begin('~/.vim/bundle')
+Plug 'morhetz/gruvbox'
+Plug 'dracula/vim',{'as':'dracula'}
+Plug 'ycm-core/YouCompleteMe'
+Plug 'jremmen/vim-ripgrep'
+Plug 'tpope/vim-fugitive'
+Plug 'mbbill/undotree'
+Plug 'bkad/CamelCaseMotion'
+call plug#end()
+let g:dracula_colorterm = 0
+colorscheme dracula
+set background=dark
+
+set colorcolumn=80,120
+highlight ColorColumn ctermbg=0 guibg=lightgrey
+
+if executable('rg')
+    let g:rg_derive_root='true'
+endif
+
+let mapleader = " "
+
+let g:netrw_browse_split = 2
+let g:netrw_banner = 0
+let g:netrw_winsize = 25
+let g:camelcasemotion_key = '<leader>'
+
+map <C-n> :NERDTreeToggle<cr>
+
+let c='a'
+while c <= 'z'
+  exec "set <A-".c.">=\e".c
+  exec "imap \e".c." <A-".c.">"
+  let c = nr2char(1+char2nr(c))
+endw
+set ttimeout ttimeoutlen=30
+
+nnoremap <leader>h :wincmd h<cr>
+nnoremap <leader>j :wincmd j<cr>
+nnoremap <leader>k :wincmd k<cr>
+nnoremap <leader>l :wincmd l<cr>
+nnoremap <leader>u :UndotreeShow<cr>
+nnoremap <leader>pv :wincmd v<bar> :Ex <bar> :vertical resize 30<cr>
+nnoremap <leader>ps :Rg<space>
+nnoremap <silent> <leader>+ :vertical resize +5<cr>
+nnoremap <silent> <leader>- :vertical resize -5<cr>
+nnoremap <A-j> :m .+1<cr>==
+nnoremap <A-k> :m .-2<cr>==
+inoremap <A-j> <Esc>:m .+1<cr>==gi
+inoremap <A-k> <Esc>:m .-2<cr>==gi
+inoremap <cr> <c-g>u<cr>
+vnoremap <A-j> :m '>+1<cr>gv=gv
+vnoremap <A-k> :m '<-2<cr>gv=gv
+inoremap <silent> <C-W> <C-\><C-O>db
+inoremap <silent> <C-U> <C-\><C-O>d0
+inoremap <silent> <C-Y> <C-R>"
+
+fun! GoYCM()
+    nnoremap <buffer> <silent> <leader>gd :YcmCompleter GoTo<cr>
+    nnoremap <buffer> <silent> <leader>gr :YcmCompleter GoToReferences<cr>
+    nnoremap <buffer> <silent> <leader>rr :YcmCompleter RefactorRename<space>
+endfun
+
+function! s:check_back_space() abort
+    let col = col('.') - 1
+    return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
+
+fun! GoCoc()
+    inoremap <buffer> <silent><expr> <TAB>
+                \ pumvisible() ? "\<C-n>" :
+                \ <SID>check_back_space() ? "\<TAB>" :
+                \ coc#refresh()
+
+    inoremap <buffer> <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
+    inoremap <buffer> <silent><expr> <C-space> coc#refresh()
+
+    " GoTo code navigation.
+    nmap <buffer> <leader>gd <Plug>(coc-definition)
+    nmap <buffer> <leader>gy <Plug>(coc-type-definition)
+    nmap <buffer> <leader>gi <Plug>(coc-implementation)
+    nmap <buffer> <leader>gr <Plug>(coc-references)
+    nnoremap <buffer> <leader>cr :CocRestart
+endfun
+
+fun! TrimWhitespace()
+    let l:save = winsaveview()
+    keeppatterns %s/\s\+$//e
+    call winrestview(l:save)
+endfun
+
+autocmd BufWritePre * :call TrimWhitespace()
+autocmd FileType typescript :call GoYCM()
+autocmd FileType cpp,cxx,h,hpp,c :call GoCoc()
+" Mark the current line with an underline.
+set cursorline
+" Start scrolling text when near top/bottom of screen.
+set so=5
+
+" Turn on auto-indentation based on file type if available.
+if has("autocmd")
+filetype plugin indent on
+endif
